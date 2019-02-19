@@ -1,9 +1,12 @@
+#include "MessageQueue.h"
+
 #include <iostream>
 #include <unistd.h>
 #include <mqueue.h>
 #include <fcntl.h>           
 #include <sys/stat.h>
 #include <cstdlib>
+#include <array>
 
 
 int main(int argc, char * argv[]) {
@@ -14,23 +17,21 @@ int main(int argc, char * argv[]) {
 
     }
 
-    mqd_t messageQueueDescriptorClient;
+	logger::MessageQueue read = logger::MessageQueue::open(argv[1], logger::MessageQueueMode::read);
 
-    if ((messageQueueDescriptorClient = mq_open(argv[1], O_RDONLY)) == -1) {
-        perror ("cant open server from client");
-        exit (1);
-    }
+	std::array<char, 4096> buffer = 
+		std::array<char, 4096>{};
 
-    char outBuffer[512];
+	unsigned int bytesRead = read.read( logger::Buffer {
+		buffer.data(),
+		buffer.size()
+	});
 
-    if ((mq_receive(messageQueueDescriptorClient, outBuffer, 512, NULL)) == -1) {
-        perror ("cant receive from server");
-        exit (1);
-    }
+	std::cout << "I read " << bytesRead << " bytes\n";
+    
 
     std::cout << "reveived this:\n";
-    std::cout << outBuffer << "\n";
+    std::cout << buffer.data() << "\n";
     
-    std::cout << "hello from the other executable\n";
     std::cin.get();
 }
